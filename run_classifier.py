@@ -757,7 +757,7 @@ def model_fn_builder(bert_config, num_labels, init_checkpoint, learning_rate,
               fn_mic, tf.count_nonzero((y_pred - 1) * y_true, axis=None)
           )
           # Update op for the weights, just summing
-          up_weights = tf.assign_add(weights, tf.reduce_sum(y_true, axis=0))
+          up_weights = tf.assign_add(weights, tf.cast(tf.reduce_sum(y_true, axis=0),tf.int64))
 
           # Grouping values
           counts = (tp_mac, fp_mac, fn_mac, tp_mic, fp_mic, fn_mic, weights)
