@@ -719,27 +719,27 @@ def model_fn_builder(bert_config, num_labels, init_checkpoint, learning_rate,
 
           # Weights for the weighted f1 score
           weights = metric_variable(
-              shape=[num_classes], dtype=tf.int64, validate_shape=False, name="weights"
+              shape=[num_classes], dtype=tf.int32, validate_shape=False, name="weights"
           )
           # Counts for the macro f1 score
           tp_mac = metric_variable(
-              shape=[num_classes], dtype=tf.int64, validate_shape=False, name="tp_mac"
+              shape=[num_classes], dtype=tf.int32, validate_shape=False, name="tp_mac"
           )
           fp_mac = metric_variable(
-              shape=[num_classes], dtype=tf.int64, validate_shape=False, name="fp_mac"
+              shape=[num_classes], dtype=tf.int32, validate_shape=False, name="fp_mac"
           )
           fn_mac = metric_variable(
-              shape=[num_classes], dtype=tf.int64, validate_shape=False, name="fn_mac"
+              shape=[num_classes], dtype=tf.int32, validate_shape=False, name="fn_mac"
           )
           # Counts for the micro f1 score
           tp_mic = metric_variable(
-              shape=[], dtype=tf.int64, validate_shape=False, name="tp_mic"
+              shape=[], dtype=tf.int32, validate_shape=False, name="tp_mic"
           )
           fp_mic = metric_variable(
-              shape=[], dtype=tf.int64, validate_shape=False, name="fp_mic"
+              shape=[], dtype=tf.int32, validate_shape=False, name="fp_mic"
           )
           fn_mic = metric_variable(
-              shape=[], dtype=tf.int64, validate_shape=False, name="fn_mic"
+              shape=[], dtype=tf.int32, validate_shape=False, name="fn_mic"
           )
 
           # Update ops, as in the previous section:
