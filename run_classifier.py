@@ -25,7 +25,6 @@ import modeling
 import optimization
 import tokenization
 import tensorflow as tf
-import tensorflow_addons as tfa
 
 flags = tf.flags
 
@@ -684,22 +683,59 @@ def model_fn_builder(bert_config, num_labels, init_checkpoint, learning_rate,
 
       def metric_fn(per_example_loss, label_ids, logits, is_real_example):
         predictions = tf.argmax(logits, axis=-1, output_type=tf.int32)
-
-        f1 = tfa.metrics.F1Score(num_classes=num_labels, average='macro')
-
         accuracy = tf.metrics.accuracy(
             labels=label_ids, predictions=predictions, weights=is_real_example)
-        precision = tf.metrics.precision(labels=label_ids,predictions=predictions,weights=is_real_example)
-        recall = tf.metrics.recall(labels=label_ids,predictions=predictions,weights=is_real_example)
-        f1.update_state(label_ids,predictions)
+        
+        def tf_f1_score(y_true, y_pred):
+          """Computes 3 different f1 scores, micro macro
+          weighted.
+          micro: f1 score accross the classes, as 1
+          macro: mean of f1 scores per class
+          weighted: weighted average of f1 scores per class,
+                    weighted from the support of each class
+          Args:
+              y_true (Tensor): labels, with shape (batch, num_classes)
+              y_pred (Tensor): model's predictions, same shape as y_true
+          Returns:
+              tupe(Tensor): (micro, macro, weighted)
+                            tuple of the computed f1 scores
+          """
+
+          f1s = [0, 0, 0]
+
+          y_true = tf.cast(y_true, tf.float64)
+          y_pred = tf.cast(y_pred, tf.float64)
+
+          for i, axis in enumerate([None, 0]):
+              TP = tf.count_nonzero(y_pred * y_true, axis=axis)
+              FP = tf.count_nonzero(y_pred * (y_true - 1), axis=axis)
+              FN = tf.count_nonzero((y_pred - 1) * y_true, axis=axis)
+
+              precision = TP / (TP + FP)
+              recall = TP / (TP + FN)
+              f1 = 2 * precision * recall / (precision + recall)
+
+              f1s[i] = tf.reduce_mean(f1)
+
+          weights = tf.reduce_sum(y_true, axis=0)
+          weights /= tf.reduce_sum(weights)
+
+          f1s[2] = tf.reduce_sum(f1 * weights)
+
+          micro, macro, weighted = f1s
+          return micro, macro, weighted
+
+        #precision = tf.metrics.precision(labels=label_ids,predictions=predictions,weights=is_real_example)
+        #recall = tf.metrics.recall(labels=label_ids,predictions=predictions,weights=is_real_example)
+        _,f1,_ = tf_f1_score(label_ids,predictions)
         
         loss = tf.metrics.mean(values=per_example_loss, weights=is_real_example)
         return {
             "eval_accuracy": accuracy,
             "eval_loss": loss,
-            "eval_precision": precision,
-            "eval_recall": recall,
-            "eval_f1": f1.results()
+            #"eval_precision": precision,
+            #"eval_recall": recall,
+            "eval_macro_f1": f1
         }
 
       eval_metrics = (metric_fn,
