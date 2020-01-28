@@ -26,6 +26,22 @@ import optimization
 import tokenization
 import tensorflow as tf
 
+
+from tensorflow.python.ops import variable_scope
+from tensorflow.python.ops import array_ops
+from tensorflow.python.framework import ops
+def metric_variable(shape, dtype, validate_shape=True, name=None):
+    """Create variable in `GraphKeys.(LOCAL|METRIC_VARIABLES`) collections.
+    from https://github.com/tensorflow/tensorflow/blob/r1.8/tensorflow/python/ops/metrics_impl.py
+    """
+    return variable_scope.variable(
+        lambda: array_ops.zeros(shape, dtype),
+        trainable=False,
+        collections=[ops.GraphKeys.LOCAL_VARIABLES, ops.GraphKeys.METRIC_VARIABLES],
+        validate_shape=validate_shape,
+        name=name,
+    )
+
 flags = tf.flags
 
 FLAGS = flags.FLAGS
@@ -785,7 +801,7 @@ def model_fn_builder(bert_config, num_labels, init_checkpoint, learning_rate,
 
         #precision = tf.metrics.precision(labels=label_ids,predictions=predictions,weights=is_real_example)
         #recall = tf.metrics.recall(labels=label_ids,predictions=predictions,weights=is_real_example)
-        counts, update = streaming_counts(label_ids, predictions, num_classes)
+        counts, update = streaming_counts(label_ids, predictions, num_labels)
         streamed_f1 = streaming_f1(counts)
         mic, f1, wei = [f.eval() for f in streamed_f1]
         
