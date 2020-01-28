@@ -25,6 +25,7 @@ import modeling
 import optimization
 import tokenization
 import tensorflow as tf
+import tensorflow_addons as tfa
 
 flags = tf.flags
 
@@ -683,11 +684,14 @@ def model_fn_builder(bert_config, num_labels, init_checkpoint, learning_rate,
 
       def metric_fn(per_example_loss, label_ids, logits, is_real_example):
         predictions = tf.argmax(logits, axis=-1, output_type=tf.int32)
+
+        f1 = tfa.metrics.F1Score(num_classes=num_labels, average='macro')
+
         accuracy = tf.metrics.accuracy(
             labels=label_ids, predictions=predictions, weights=is_real_example)
         precision = tf.metrics.precision(labels=label_ids,predictions=predictions,weights=is_real_example)
         recall = tf.metrics.recall(labels=label_ids,predictions=predictions,weights=is_real_example)
-        f1 = 2.*precision*recall/(precision+recall) 
+        f1.update_state(label_ids,predictions)
         
         loss = tf.metrics.mean(values=per_example_loss, weights=is_real_example)
         return {
@@ -695,7 +699,7 @@ def model_fn_builder(bert_config, num_labels, init_checkpoint, learning_rate,
             "eval_loss": loss,
             "eval_precision": precision,
             "eval_recall": recall,
-            "eval_f1": f1
+            "eval_f1": f1.results()
         }
 
       eval_metrics = (metric_fn,
