@@ -4,7 +4,7 @@ import pyarabic.araby as araby
 #%%
 from py4j.java_gateway import JavaGateway
 
-gateway = JavaGateway.launch_gateway(classpath='./FarasaSegmenterJar.jar')
+gateway = JavaGateway.launch_gateway(classpath='./bert/FarasaSegmenterJar.jar')
 farasa = gateway.jvm.com.qcri.farasa.segmenter.Farasa()
 #%%
 
