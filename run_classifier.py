@@ -686,9 +686,11 @@ def model_fn_builder(bert_config, num_labels, init_checkpoint, learning_rate,
         accuracy = tf.metrics.accuracy(
             labels=label_ids, predictions=predictions, weights=is_real_example)
         
+        logits_split = tf.split(probabilities, num_labels, axis=-1)
+        label_ids_split = tf.split(label_ids, num_labels, axis=-1)
         eval_dict = {}
         f1_per_label = list()
-        for j, (label_name, logits) in enumerate(zip(LABEL_COLUMNS, logits_split)):
+        for j, (label_name, logits) in enumerate(zip(['NOT_OFF', 'OFF'], logits_split)):
             label_id_ = tf.cast(label_ids_split[j], dtype=tf.int32)
             # current_auc, update_op_auc = tf.metrics.auc(label_id_, logits)
             logits = tf.math.round(logits)
