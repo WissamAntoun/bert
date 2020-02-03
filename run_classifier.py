@@ -686,11 +686,24 @@ def model_fn_builder(bert_config, num_labels, init_checkpoint, learning_rate,
         accuracy = tf.metrics.accuracy(
             labels=label_ids, predictions=predictions, weights=is_real_example)
         
+        eval_dict = {}
+        f1_per_label = list()
+        for j, (label_name, logits) in enumerate(zip(LABEL_COLUMNS, logits_split)):
+            label_id_ = tf.cast(label_ids_split[j], dtype=tf.int32)
+            # current_auc, update_op_auc = tf.metrics.auc(label_id_, logits)
+            logits = tf.math.round(logits)
+            current_f1, update_op_f1 = tf.contrib.metrics.f1_score(label_id_, logits)
+            eval_dict[label_name + '_f1'] = (current_f1, update_op_f1)  # (current_auc, update_op_auc)
+            f1_per_label.append(current_f1)  
+        eval_dict['macro_f1'] = np.mean(f1_per_label)
+        eval_dict['eval_loss'] = tf.metrics.mean(values=per_example_loss)
+                
         loss = tf.metrics.mean(values=per_example_loss, weights=is_real_example)
-        return {
-            "eval_accuracy": accuracy,
-            "eval_loss": loss,
-        }
+        
+        eval_dict['eval_accuracy'] = accuracy
+        eval_dict['eval_loss']=loss
+        return eval_dict
+    
 
       eval_metrics = (metric_fn,
                       [per_example_loss, label_ids, logits, is_real_example])
