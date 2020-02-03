@@ -682,8 +682,6 @@ def model_fn_builder(bert_config, num_labels, init_checkpoint, learning_rate,
     elif mode == tf.estimator.ModeKeys.EVAL:
 
       def metric_fn(per_example_loss, label_ids, probabilities, is_real_example):
-        tf.print(tf.shape(label_ids))
-        tf.print(tf.shape(probabilities))
         predictions = tf.argmax(probabilities, axis=-1, output_type=tf.int32)
         
         accuracy = tf.metrics.accuracy(
@@ -691,16 +689,12 @@ def model_fn_builder(bert_config, num_labels, init_checkpoint, learning_rate,
         
         logits_split = tf.split(probabilities, num_labels, axis=-1)
         label_ids_split = tf.split(label_ids, num_labels, axis=-1)
-        tf.print(tf.shape(logits_split))
-        tf.print(tf.shape(label_ids_split))
         eval_dict = {}
         f1_per_label = list()
         for j, (label_name, logits) in enumerate(zip(['NOT_OFF', 'OFF'], logits_split)):
             label_id_ = tf.cast(label_ids_split[j], dtype=tf.int32)
             # current_auc, update_op_auc = tf.metrics.auc(label_id_, logits)
             logits = tf.math.round(logits)
-            tf.print(tf.shape(label_id_))
-            tf.print(tf.shape(logits))
             current_f1, update_op_f1 = tf.contrib.metrics.f1_score(label_id_, logits)
             eval_dict[label_name + '_f1'] = (current_f1, update_op_f1)  # (current_auc, update_op_auc)
             f1_per_label.append(current_f1)  
@@ -713,7 +707,8 @@ def model_fn_builder(bert_config, num_labels, init_checkpoint, learning_rate,
         eval_dict['eval_loss']=loss
         return eval_dict
     
-
+      tf.print(tf.shape(label_ids))
+      tf.print(tf.shape(probabilities))
       eval_metrics = (metric_fn,
                       [per_example_loss, label_ids, logits, is_real_example])
       output_spec = tf.contrib.tpu.TPUEstimatorSpec(
