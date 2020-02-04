@@ -1,3 +1,4 @@
+***This is a Temp repo for araBERT, all the code will be moved to a new repo for araBERT with an updated Readme***
 # BERT
 
 **\*\*\*\*\* New May 31st, 2019: Whole Word Masking Models \*\*\*\*\***
